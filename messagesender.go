@@ -1,9 +1,11 @@
 package messaging
 
 type ConnectConfig struct {
-	param1 string
-	param2 string
-	param3 string
+	param1    string
+	param2    string
+	param3    string
+	paramInt  int
+	paramBool bool
 }
 
 type MarshalFunc func(any) ([]byte, error)
