@@ -13,38 +13,42 @@ var (
 	testPayload   = "Hello, World!"
 )
 
-type StubSenderFunc struct {
+type StubClient struct {
 	data []byte
 }
 
-func (s *StubSenderFunc) SenderFunc(data []byte) error {
+func (s *StubClient) Connect() error {
+	return nil
+}
+
+func (s *StubClient) Send(data []byte) error {
 	s.data = data
 	return nil
 }
 
 func TestMessageSender(t *testing.T) {
-	messageSender := StubSenderFunc{}
+	client := &StubClient{}
 
 	t.Run("encodes message in JSON and sends it via SenderFunc", func(t *testing.T) {
-		sender := NewMessageSender(messageSender.SenderFunc, json.Marshal)
+		sender := NewMessageSender(client, json.Marshal)
 
 		want := NewBaseMessage(testMessageID, testTopic, testPayload)
 		sender.SendMessage(want)
 
 		var got BaseMessage
-		json.Unmarshal(messageSender.data, &got)
+		json.Unmarshal(client.data, &got)
 
 		AssertEqual(t, got, want)
 	})
 
 	t.Run("encodes message in MessagePack and sends it via SenderFunc", func(t *testing.T) {
-		sender := NewMessageSender(messageSender.SenderFunc, msgpack.Marshal)
+		sender := NewMessageSender(client, msgpack.Marshal)
 
 		want := NewBaseMessage(testMessageID, testTopic, testPayload)
 		sender.SendMessage(want)
 
 		var got BaseMessage
-		msgpack.Unmarshal(messageSender.data, &got)
+		msgpack.Unmarshal(client.data, &got)
 
 		AssertEqual(t, got, want)
 	})
