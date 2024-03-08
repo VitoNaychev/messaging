@@ -25,7 +25,7 @@ type BaseMessage struct {
 func NewBaseMessage(messageID int, topic string, payload interface{}) BaseMessage {
 	return BaseMessage{
 		UUID:      uuid.NewString(),
-		Timestamp: time.Now(),
+		Timestamp: time.Now().Round(0),
 		Topic:     topic,
 		MessageID: messageID,
 		Payload:   payload,

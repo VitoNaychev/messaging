@@ -1,15 +1,20 @@
 package messaging
 
+import "encoding/json"
+
+type SenderFunc func([]byte) error
+
 type MessageSender struct {
-	msgChan chan Message
+	senderFunc SenderFunc
 }
 
-func NewMessageSender(msgChan chan Message) *MessageSender {
+func NewMessageSender(senderFunc SenderFunc) *MessageSender {
 	return &MessageSender{
-		msgChan: msgChan,
+		senderFunc: senderFunc,
 	}
 }
 
-func (m *MessageSender) SendMessage(message Message) {
-	m.msgChan <- message
+func (m *MessageSender) SendMessage(message Message) error {
+	data, _ := json.Marshal(message)
+	return m.senderFunc(data)
 }
