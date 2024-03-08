@@ -3,6 +3,8 @@ package messaging
 import (
 	"encoding/json"
 	"testing"
+
+	"github.com/vmihailenco/msgpack/v5"
 )
 
 var (
@@ -22,15 +24,28 @@ func (s *StubSenderFunc) SenderFunc(data []byte) error {
 
 func TestMessageSender(t *testing.T) {
 	messageSender := StubSenderFunc{}
-	sender := NewMessageSender(messageSender.SenderFunc)
 
-	t.Run("sends message to channel", func(t *testing.T) {
+	t.Run("encodes message in JSON and sends it via SenderFunc", func(t *testing.T) {
+		sender := NewMessageSender(messageSender.SenderFunc, json.Marshal)
+
 		want := NewBaseMessage(testMessageID, testTopic, testPayload)
 		sender.SendMessage(want)
 
 		var got BaseMessage
 		json.Unmarshal(messageSender.data, &got)
 
-		AssertEqual(t, want, got)
+		AssertEqual(t, got, want)
+	})
+
+	t.Run("encodes message in MessagePack and sends it via SenderFunc", func(t *testing.T) {
+		sender := NewMessageSender(messageSender.SenderFunc, msgpack.Marshal)
+
+		want := NewBaseMessage(testMessageID, testTopic, testPayload)
+		sender.SendMessage(want)
+
+		var got BaseMessage
+		msgpack.Unmarshal(messageSender.data, &got)
+
+		AssertEqual(t, got, want)
 	})
 }
