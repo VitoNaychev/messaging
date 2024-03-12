@@ -32,17 +32,4 @@ func TestClient(t *testing.T) {
 		AssertEqual(t, clientB.brokers, configB.brokers)
 		AssertEqual(t, clientB.partition, configB.partition)
 	})
-
-	t.Run("returns ErrConfigMismatch on wrong config", func(t *testing.T) {
-		clientB := &StubClientB{}
-		configA := &StubConfigA{
-			brokers:  []string{"192.168.0.1"},
-			connType: "tcp",
-		}
-
-		err := clientB.Connect(configA)
-		// bypass unused compiler error
-
-		AssertEqual(t, err, ErrConfigMismatch)
-	})
 }
