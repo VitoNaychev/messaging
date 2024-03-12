@@ -1,5 +1,11 @@
 package messaging
 
+import "errors"
+
+var (
+	ErrConfigMismatch = errors.New("Client doesn't support this ConfigProvider")
+)
+
 type StubConfigA struct {
 	brokers  []string
 	connType string
@@ -22,7 +28,7 @@ type StubClientA struct {
 func (s *StubClientA) Connect(config ConfigProvider) error {
 	configA, ok := config.(*StubConfigA)
 	if !ok {
-		return nil
+		return ErrConfigMismatch
 	}
 
 	s.brokers = configA.GetBrokersAddrs()
@@ -58,7 +64,7 @@ type StubClientB struct {
 func (s *StubClientB) Connect(config ConfigProvider) error {
 	configB, ok := config.(*StubConfigB)
 	if !ok {
-		return nil
+		return ErrConfigMismatch
 	}
 
 	s.brokers = configB.GetBrokersAddrs()

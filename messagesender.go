@@ -1,15 +1,6 @@
 package messaging
 
-type ConfigProvider interface {
-	GetBrokersAddrs() []string
-}
-
 type MarshalFunc func(any) ([]byte, error)
-
-type Client interface {
-	Connect(ConfigProvider) error
-	Send([]byte) error
-}
 
 type MessageSender struct {
 	client      Client
