@@ -1,4 +1,4 @@
-# Messaging wrapper for MQ.
+# Messaging wrapper for MQs
 
 The package provides functions for sending and receiving of simple messages, commands and events. 
 It also provides interfaces that can be implemented to provide support for combinations of message 
