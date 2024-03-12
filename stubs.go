@@ -1,20 +1,32 @@
 package messaging
 
 type StubConfigA struct {
-	brokers []string
+	brokers  []string
+	connType string
 }
 
 func (s *StubConfigA) GetBrokersAddrs() []string {
 	return s.brokers
 }
 
+func (s *StubConfigA) GetConnectionType() string {
+	return s.connType
+}
+
 type StubClientA struct {
-	brokers []string
-	data    []byte
+	brokers  []string
+	connType string
+	data     []byte
 }
 
 func (s *StubClientA) Connect(config ConfigProvider) error {
-	s.brokers = config.GetBrokersAddrs()
+	configA, ok := config.(*StubConfigA)
+	if !ok {
+		return nil
+	}
+
+	s.brokers = configA.GetBrokersAddrs()
+	s.connType = configA.GetConnectionType()
 
 	return nil
 }
@@ -25,20 +37,32 @@ func (s *StubClientA) Send(data []byte) error {
 }
 
 type StubConfigB struct {
-	brokers []string
+	brokers   []string
+	partition int
 }
 
 func (s *StubConfigB) GetBrokersAddrs() []string {
 	return s.brokers
 }
 
+func (s *StubConfigB) GetPartition() int {
+	return s.partition
+}
+
 type StubClientB struct {
-	brokers []string
-	data    []byte
+	brokers   []string
+	partition int
+	data      []byte
 }
 
 func (s *StubClientB) Connect(config ConfigProvider) error {
-	s.brokers = config.GetBrokersAddrs()
+	configB, ok := config.(*StubConfigB)
+	if !ok {
+		return nil
+	}
+
+	s.brokers = configB.GetBrokersAddrs()
+	s.partition = configB.GetPartition()
 
 	return nil
 }

@@ -17,7 +17,8 @@ func TestClientInterface(t *testing.T) {
 	t.Run("configures client and connects to broker", func(t *testing.T) {
 		clientA := &StubClientA{}
 		configA := &StubConfigA{
-			brokers: []string{"192.168.0.1", "192.168.0.255"},
+			brokers:  []string{"192.168.0.1", "192.168.0.255"},
+			connType: "tcp",
 		}
 
 		sender := NewMessageSender(clientA, configA, json.Marshal)
@@ -25,12 +26,14 @@ func TestClientInterface(t *testing.T) {
 		sender.marshalFunc("")
 
 		AssertEqual(t, clientA.brokers, configA.brokers)
+		AssertEqual(t, clientA.connType, configA.connType)
 	})
 
 	t.Run("configures client B and connects to broker", func(t *testing.T) {
 		clientB := &StubClientB{}
 		configB := &StubConfigB{
-			brokers: []string{"192.168.0.1"},
+			brokers:   []string{"192.168.0.1"},
+			partition: 2,
 		}
 
 		sender := NewMessageSender(clientB, configB, json.Marshal)
@@ -38,6 +41,7 @@ func TestClientInterface(t *testing.T) {
 		sender.marshalFunc("")
 
 		AssertEqual(t, clientB.brokers, configB.brokers)
+		AssertEqual(t, clientB.partition, configB.partition)
 	})
 }
 
