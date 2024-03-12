@@ -1,6 +1,8 @@
 package messaging
 
-import "fmt"
+import (
+	"fmt"
+)
 
 type ErrConnect struct {
 	msg string
@@ -22,13 +24,17 @@ func (e *ErrConnect) Unwrap() error {
 	return e.err
 }
 
+type UnmarshalFunc func([]byte, any) error
+
 type MessageReceiver struct {
-	client Client
+	unmarshal UnmarshalFunc
+	client    Client
 }
 
-func NewMessageReceiver(client Client, configProvider ConfigProvider) (*MessageReceiver, error) {
+func NewMessageReceiver(client Client, configProvider ConfigProvider, unmarshal UnmarshalFunc) (*MessageReceiver, error) {
 	receiver := MessageReceiver{
-		client: client,
+		unmarshal: unmarshal,
+		client:    client,
 	}
 	err := receiver.client.Connect(configProvider)
 	if err != nil {
@@ -38,5 +44,8 @@ func NewMessageReceiver(client Client, configProvider ConfigProvider) (*MessageR
 }
 
 func (m *MessageReceiver) ReceiveMessage() Message {
-	return nil
+	var message BaseMessage
+	m.unmarshal(m.client.Receive(), &message)
+
+	return message
 }

@@ -47,6 +47,10 @@ func (s *StubClientA) Send(data []byte) error {
 	return nil
 }
 
+func (s *StubClientA) Receive() []byte {
+	return s.data
+}
+
 type StubConfigB struct {
 	brokers   []string
 	partition int
@@ -81,4 +85,8 @@ func (s *StubClientB) Connect(config ConfigProvider) error {
 func (s *StubClientB) Send(data []byte) error {
 	s.data = data
 	return nil
+}
+
+func (s *StubClientB) Receive() []byte {
+	return s.data
 }
