@@ -72,8 +72,8 @@ func (s *StubClientA) Send(data []byte) error {
 	return nil
 }
 
-func (s *StubClientA) Receive() []byte {
-	return s.data
+func (s *StubClientA) Receive() ([]byte, error) {
+	return s.data, nil
 }
 
 type StubConfigB struct {
@@ -112,6 +112,6 @@ func (s *StubClientB) Send(data []byte) error {
 	return nil
 }
 
-func (s *StubClientB) Receive() []byte {
-	return s.data
+func (s *StubClientB) Receive() ([]byte, error) {
+	return s.data, nil
 }

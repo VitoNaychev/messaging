@@ -5,14 +5,18 @@ type MessageSender struct {
 	serializer Serializer
 }
 
-func NewMessageSender(client Client, configProvider ConfigProvider, serializer Serializer) *MessageSender {
+func NewMessageSender(client Client, configProvider ConfigProvider, serializer Serializer) (*MessageSender, error) {
 	messageSender := MessageSender{
 		client:     client,
 		serializer: serializer,
 	}
 
-	messageSender.client.Connect(configProvider)
-	return &messageSender
+	err := messageSender.client.Connect(configProvider)
+	if err != nil {
+		return &messageSender, NewErrConnect(err)
+	}
+
+	return &messageSender, nil
 }
 
 func (m *MessageSender) SendMessage(message Message) error {

@@ -12,5 +12,5 @@ type ConfigProvider interface {
 type Client interface {
 	Connect(ConfigProvider) error
 	Send([]byte) error
-	Receive() []byte
+	Receive() ([]byte, error)
 }
