@@ -19,10 +19,17 @@ func NewMessageReceiver(client Client, configProvider ConfigProvider, serializer
 	return &receiver, nil
 }
 
-func (m *MessageReceiver) ReceiveMessage() Message {
-	var message BaseMessage
-	data, _ := m.client.Receive()
-	m.serializer.Deserialize(data, &message)
+func (m *MessageReceiver) ReceiveMessage() (Message, error) {
+	data, err := m.client.Receive()
+	if err != nil {
+		return nil, NewErrReceive(err)
+	}
 
-	return message
+	var message BaseMessage
+	err = m.serializer.Deserialize(data, &message)
+	if err != nil {
+		return nil, NewErrReceive(err)
+	}
+
+	return message, nil
 }

@@ -20,6 +20,15 @@ func NewMessageSender(client Client, configProvider ConfigProvider, serializer S
 }
 
 func (m *MessageSender) SendMessage(message Message) error {
-	data, _ := m.serializer.Serialize(message)
-	return m.client.Send(data)
+	data, err := m.serializer.Serialize(message)
+	if err != nil {
+		return NewErrSend(err)
+	}
+
+	err = m.client.Send(data)
+	if err != nil {
+		return NewErrSend(err)
+	}
+
+	return nil
 }

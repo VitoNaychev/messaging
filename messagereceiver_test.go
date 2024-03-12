@@ -47,7 +47,8 @@ func TestMessageReceiver(t *testing.T) {
 		want := NewBaseMessage(testMessageID, testTopic, testPayload)
 		client.data, _ = json.Marshal(want)
 
-		got := receiver.ReceiveMessage()
+		got, err := receiver.ReceiveMessage()
+		AssertEqual(t, err, nil)
 
 		AssertEqual(t, got, (Message)(want))
 	})
@@ -65,41 +66,30 @@ func TestMessageReceiver(t *testing.T) {
 		want := NewBaseMessage(testMessageID, testTopic, testPayload)
 		client.data, _ = msgpack.Marshal(want)
 
-		got := receiver.ReceiveMessage()
+		got, err := receiver.ReceiveMessage()
+		AssertEqual(t, err, nil)
 
 		AssertEqual(t, got, (Message)(want))
 	})
 
-	// t.Run("receives message from channel", func(t *testing.T) {
-	// 	want := NewBaseMessage(testMessageID, testTopic, testPayload)
+	t.Run("returns ErrReceive on error during message receival", func(t *testing.T) {
+		client := &StubClientA{}
+		config := &StubConfigA{
+			brokers: []string{"192.168.0.1"},
+		}
+		serializer := &MsgpackSerializer{}
 
-	// 	got := receiver.ReceiveMessage()
+		receiver, err := NewMessageReceiver(client, config, serializer)
+		AssertEqual(t, err, nil)
 
-	// 	if !reflect.DeepEqual(want, got) {
-	// 		t.Errorf("got %v want %v", got, want)
-	// 	}
-	// })
+		message := NewBaseMessage(testMessageID, testTopic, testPayload)
+		client.data, _ = msgpack.Marshal(message)
 
-	// t.Run("receives multiple messages from channel", func(t *testing.T) {
-	// 	wantFirst := NewBaseMessage(testMessageID, testTopic, "First")
-	// 	wantSecond := NewBaseMessage(testMessageID, testTopic, "Second")
-	// 	wantThird := NewBaseMessage(testMessageID, testTopic, "Third")
+		client.err = errors.New("dummy error")
+		_, err = receiver.ReceiveMessage()
+		AssertErrorType[*ErrReceive](t, err)
 
-	// 	go func() {
-	// 		msgChan <- wantFirst
-	// 		msgChan <- wantSecond
-	// 		msgChan <- wantThird
-	// 	}()
-
-	// 	got := receiver.ReceiveMessage()
-	// 	AssertEqual(t, got, (Message)(wantFirst))
-
-	// 	got = receiver.ReceiveMessage()
-	// 	AssertEqual(t, got, (Message)(wantSecond))
-
-	// 	got = receiver.ReceiveMessage()
-	// 	AssertEqual(t, got, (Message)(wantThird))
-	// })
+	})
 
 }
 

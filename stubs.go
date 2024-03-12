@@ -46,6 +46,7 @@ func (s *StubConfigA) GetConnectionType() string {
 
 type StubClientA struct {
 	isConnected bool
+	err         error
 
 	brokers  []string
 	connType string
@@ -69,11 +70,11 @@ func (s *StubClientA) Connect(config ConfigProvider) error {
 
 func (s *StubClientA) Send(data []byte) error {
 	s.data = data
-	return nil
+	return s.err
 }
 
 func (s *StubClientA) Receive() ([]byte, error) {
-	return s.data, nil
+	return s.data, s.err
 }
 
 type StubConfigB struct {
