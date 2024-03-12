@@ -1,10 +1,35 @@
 package messaging
 
-import "errors"
+import (
+	"encoding/json"
+	"errors"
+
+	"github.com/vmihailenco/msgpack/v5"
+)
 
 var (
 	ErrConfigMismatch = errors.New("Client doesn't support this ConfigProvider")
 )
+
+type JSONSerializer struct{}
+
+func (j *JSONSerializer) Serialize(v any) ([]byte, error) {
+	return json.Marshal(v)
+}
+
+func (j *JSONSerializer) Deserialize(data []byte, v any) error {
+	return json.Unmarshal(data, v)
+}
+
+type MsgpackSerializer struct{}
+
+func (j *MsgpackSerializer) Serialize(v any) ([]byte, error) {
+	return msgpack.Marshal(v)
+}
+
+func (j *MsgpackSerializer) Deserialize(data []byte, v any) error {
+	return msgpack.Unmarshal(data, v)
+}
 
 type StubConfigA struct {
 	brokers  []string

@@ -1,16 +1,14 @@
 package messaging
 
-type MarshalFunc func(any) ([]byte, error)
-
 type MessageSender struct {
-	client      Client
-	marshalFunc MarshalFunc
+	client     Client
+	serializer Serializer
 }
 
-func NewMessageSender(client Client, configProvider ConfigProvider, marshalFunc MarshalFunc) *MessageSender {
+func NewMessageSender(client Client, configProvider ConfigProvider, serializer Serializer) *MessageSender {
 	messageSender := MessageSender{
-		client:      client,
-		marshalFunc: marshalFunc,
+		client:     client,
+		serializer: serializer,
 	}
 
 	messageSender.client.Connect(configProvider)
@@ -18,6 +16,6 @@ func NewMessageSender(client Client, configProvider ConfigProvider, marshalFunc 
 }
 
 func (m *MessageSender) SendMessage(message Message) error {
-	data, _ := m.marshalFunc(message)
+	data, _ := m.serializer.Serialize(message)
 	return m.client.Send(data)
 }

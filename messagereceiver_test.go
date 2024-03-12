@@ -39,8 +39,9 @@ func TestMessageReceiver(t *testing.T) {
 		config := &StubConfigA{
 			brokers: []string{"192.168.0.1"},
 		}
+		serializer := &JSONSerializer{}
 
-		receiver, err := NewMessageReceiver(client, config, json.Unmarshal)
+		receiver, err := NewMessageReceiver(client, config, serializer)
 		AssertEqual(t, err, nil)
 
 		want := NewBaseMessage(testMessageID, testTopic, testPayload)
@@ -56,8 +57,9 @@ func TestMessageReceiver(t *testing.T) {
 		config := &StubConfigA{
 			brokers: []string{"192.168.0.1"},
 		}
+		serializer := &MsgpackSerializer{}
 
-		receiver, err := NewMessageReceiver(client, config, msgpack.Unmarshal)
+		receiver, err := NewMessageReceiver(client, config, serializer)
 		AssertEqual(t, err, nil)
 
 		want := NewBaseMessage(testMessageID, testTopic, testPayload)
