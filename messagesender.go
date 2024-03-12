@@ -1,17 +1,13 @@
 package messaging
 
-type ConnectConfig struct {
-	param1    string
-	param2    string
-	param3    string
-	paramInt  int
-	paramBool bool
+type ConfigProvider interface {
+	GetBrokersAddrs() []string
 }
 
 type MarshalFunc func(any) ([]byte, error)
 
 type Client interface {
-	Connect(ConnectConfig) error
+	Connect(ConfigProvider) error
 	Send([]byte) error
 }
 
@@ -20,13 +16,13 @@ type MessageSender struct {
 	marshalFunc MarshalFunc
 }
 
-func NewMessageSender(client Client, config ConnectConfig, marshalFunc MarshalFunc) *MessageSender {
+func NewMessageSender(client Client, configProvider ConfigProvider, marshalFunc MarshalFunc) *MessageSender {
 	messageSender := MessageSender{
 		client:      client,
 		marshalFunc: marshalFunc,
 	}
 
-	messageSender.client.Connect(config)
+	messageSender.client.Connect(configProvider)
 	return &messageSender
 }
 
