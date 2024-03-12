@@ -1,46 +1,41 @@
 package messaging
 
 import (
+	"errors"
 	"reflect"
 	"testing"
 )
 
 func TestMessageReceiver(t *testing.T) {
-	msgChan := make(chan Message)
-	receiver := NewMessageReceiver(msgChan)
-
-	t.Run("receives message from channel", func(t *testing.T) {
-		want := NewBaseMessage(testMessageID, testTopic, testPayload)
-		go func() { msgChan <- want }()
-
-		got := receiver.ReceiveMessage()
-
-		if !reflect.DeepEqual(want, got) {
-			t.Errorf("got %v want %v", got, want)
+	t.Run("connects to client", func(t *testing.T) {
+		client := &StubClientA{}
+		config := &StubConfigA{
+			brokers: []string{"192.168.0.1"},
 		}
+		_, err := NewMessageReceiver(client, config)
+
+		AssertEqual(t, err, nil)
+		AssertEqual(t, client.isConnected, true)
 	})
 
-	t.Run("receives multiple messages from channel", func(t *testing.T) {
-		wantFirst := NewBaseMessage(testMessageID, testTopic, "First")
-		wantSecond := NewBaseMessage(testMessageID, testTopic, "Second")
-		wantThird := NewBaseMessage(testMessageID, testTopic, "Third")
+	t.Run("returns ErrConnect on connection error", func(t *testing.T) {
+		client := &StubClientA{}
+		config := &StubConfigB{
+			brokers:   []string{"192.168.0.1"},
+			partition: 2,
+		}
+		_, err := NewMessageReceiver(client, config)
 
-		go func() {
-			msgChan <- wantFirst
-			msgChan <- wantSecond
-			msgChan <- wantThird
-		}()
-
-		got := receiver.ReceiveMessage()
-		AssertEqual(t, got, (Message)(wantFirst))
-
-		got = receiver.ReceiveMessage()
-		AssertEqual(t, got, (Message)(wantSecond))
-
-		got = receiver.ReceiveMessage()
-		AssertEqual(t, got, (Message)(wantThird))
+		AssertErrorType[*ErrConnect](t, err)
 	})
+}
 
+func AssertErrorType[T error](t testing.TB, got error) {
+	var want T
+
+	if !errors.As(got, &want) {
+		t.Errorf("got error with type %v want %v", reflect.TypeOf(got), reflect.TypeOf(want))
+	}
 }
 
 func AssertEqual[T any](t testing.TB, got, want T) {

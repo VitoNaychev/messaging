@@ -20,12 +20,17 @@ func (s *StubConfigA) GetConnectionType() string {
 }
 
 type StubClientA struct {
+	isConnected bool
+
 	brokers  []string
 	connType string
-	data     []byte
+
+	data []byte
 }
 
 func (s *StubClientA) Connect(config ConfigProvider) error {
+	s.isConnected = true
+
 	configA, ok := config.(*StubConfigA)
 	if !ok {
 		return ErrConfigMismatch
