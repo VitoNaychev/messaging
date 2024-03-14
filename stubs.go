@@ -8,26 +8,59 @@ var (
 	ErrConfigMismatch = errors.New("Client doesn't support this ConfigProvider")
 )
 
-type StubConfigA struct {
+type StubConfig struct {
 	brokers []string
 	topic   string
 
 	connType string
 }
 
-func (s *StubConfigA) GetBrokersAddrs() []string {
+func (s *StubConfig) GetBrokersAddrs() []string {
 	return s.brokers
 }
 
-func (s *StubConfigA) GetTopic() string {
+func (s *StubConfig) GetTopic() string {
 	return s.topic
 }
 
-func (s *StubConfigA) GetConnectionType() string {
+func (s *StubConfig) GetConnectionType() string {
 	return s.connType
 }
 
-type StubClientA struct {
+type StubSenderClient struct {
+	isConnected bool
+	err         error
+
+	brokers  []string
+	connType string
+
+	message Message
+}
+
+func (s *StubSenderClient) Connect(config SenderConfigProvider) error {
+	s.isConnected = true
+
+	stubConfig, ok := config.(*StubConfig)
+	if !ok {
+		return ErrConfigMismatch
+	}
+
+	s.brokers = stubConfig.GetBrokersAddrs()
+	s.connType = stubConfig.GetConnectionType()
+
+	return s.err
+}
+
+func (s *StubSenderClient) Send(message Message) error {
+	s.message = message
+	return s.err
+}
+
+func (s *StubSenderClient) Receive() (Message, error) {
+	return s.message, s.err
+}
+
+type StubReceiverClient struct {
 	isConnected bool
 	err         error
 
@@ -38,77 +71,27 @@ type StubClientA struct {
 	message Message
 }
 
-func (s *StubClientA) Connect(config ConfigProvider) error {
+func (s *StubReceiverClient) Connect(config ReceiverConfigProvider) error {
 	s.isConnected = true
 
-	configA, ok := config.(*StubConfigA)
+	stubConfig, ok := config.(*StubConfig)
 	if !ok {
 		return ErrConfigMismatch
 	}
 
-	s.brokers = configA.GetBrokersAddrs()
+	s.brokers = stubConfig.GetBrokersAddrs()
+	s.topic = stubConfig.GetTopic()
 
-	if config, ok := config.(ReceiverConfigProvider); ok {
-		s.topic = config.GetTopic()
-	}
+	s.connType = stubConfig.GetConnectionType()
 
-	s.connType = configA.GetConnectionType()
-
-	return nil
+	return s.err
 }
 
-func (s *StubClientA) Send(message Message) error {
+func (s *StubReceiverClient) Send(message Message) error {
 	s.message = message
 	return s.err
 }
 
-func (s *StubClientA) Receive() (Message, error) {
+func (s *StubReceiverClient) Receive() (Message, error) {
 	return s.message, s.err
-}
-
-type StubConfigB struct {
-	brokers []string
-	topic   string
-
-	partition int
-}
-
-func (s *StubConfigB) GetBrokersAddrs() []string {
-	return s.brokers
-}
-
-func (s *StubConfigB) GetTopic() string {
-	return s.topic
-}
-
-func (s *StubConfigB) GetPartition() int {
-	return s.partition
-}
-
-type StubClientB struct {
-	brokers   []string
-	partition int
-
-	message Message
-}
-
-func (s *StubClientB) Connect(config ConfigProvider) error {
-	configB, ok := config.(*StubConfigB)
-	if !ok {
-		return ErrConfigMismatch
-	}
-
-	s.brokers = configB.GetBrokersAddrs()
-	s.partition = configB.GetPartition()
-
-	return nil
-}
-
-func (s *StubClientB) Send(message Message) error {
-	s.message = message
-	return nil
-}
-
-func (s *StubClientB) Receive() (Message, error) {
-	return s.message, nil
 }

@@ -13,8 +13,8 @@ var (
 
 func TestMessageSender(t *testing.T) {
 	t.Run("connects to client", func(t *testing.T) {
-		client := &StubClientA{}
-		config := &StubConfigA{
+		client := &StubSenderClient{}
+		config := &StubConfig{
 			brokers: []string{"192.168.0.1"},
 		}
 
@@ -25,19 +25,19 @@ func TestMessageSender(t *testing.T) {
 	})
 
 	t.Run("returns ErrConnect on connection error", func(t *testing.T) {
-		client := &StubClientA{}
-		config := &StubConfigB{
-			brokers:   []string{"192.168.0.1"},
-			partition: 2,
+		client := &StubSenderClient{}
+		config := &StubConfig{
+			brokers: []string{"192.168.0.1"},
 		}
 
+		client.err = errors.New("dummy error")
 		_, err := NewMessageSender(client, config)
 
 		AssertErrorType[*ErrConnect](t, err)
 	})
 	t.Run("sends message", func(t *testing.T) {
-		client := &StubClientA{}
-		config := &StubConfigA{}
+		client := &StubSenderClient{}
+		config := &StubConfig{}
 
 		sender, err := NewMessageSender(client, config)
 		AssertEqual(t, err, nil)
@@ -51,8 +51,8 @@ func TestMessageSender(t *testing.T) {
 	})
 
 	t.Run("returns ErrSend on error during message sending", func(t *testing.T) {
-		client := &StubClientA{}
-		config := &StubConfigA{
+		client := &StubSenderClient{}
+		config := &StubConfig{
 			brokers: []string{"192.168.0.1"},
 		}
 

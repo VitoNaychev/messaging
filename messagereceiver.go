@@ -1,20 +1,20 @@
 package messaging
 
 type MessageReceiver struct {
-	client Client
+	client ReceiverClient
 }
 
-func NewMessageReceiver(client Client, configProvider ReceiverConfigProvider) (*MessageReceiver, error) {
-	receiver := MessageReceiver{
+func NewMessageReceiver(client ReceiverClient, configProvider ReceiverConfigProvider) (*MessageReceiver, error) {
+	messageReceiver := MessageReceiver{
 		client: client,
 	}
 
-	err := receiver.client.Connect(configProvider)
+	err := messageReceiver.client.Connect(configProvider)
 	if err != nil {
 		return nil, NewErrConnect(err)
 	}
 
-	return &receiver, nil
+	return &messageReceiver, nil
 }
 
 func (m *MessageReceiver) ReceiveMessage() (Message, error) {

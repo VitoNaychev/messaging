@@ -8,8 +8,8 @@ import (
 
 func TestMessageReceiver(t *testing.T) {
 	t.Run("connects to client", func(t *testing.T) {
-		client := &StubClientA{}
-		config := &StubConfigA{
+		client := &StubReceiverClient{}
+		config := &StubConfig{
 			brokers: []string{"192.168.0.1"},
 			topic:   "test-topic",
 		}
@@ -21,21 +21,21 @@ func TestMessageReceiver(t *testing.T) {
 	})
 
 	t.Run("returns ErrConnect on connection error", func(t *testing.T) {
-		client := &StubClientA{}
-		config := &StubConfigB{
-			brokers:   []string{"192.168.0.1"},
-			topic:     "test-topic",
-			partition: 2,
+		client := &StubReceiverClient{}
+		config := &StubConfig{
+			brokers: []string{"192.168.0.1"},
+			topic:   "test-topic",
 		}
 
+		client.err = errors.New("dummy error")
 		_, err := NewMessageReceiver(client, config)
 
 		AssertErrorType[*ErrConnect](t, err)
 	})
 
 	t.Run("receives message", func(t *testing.T) {
-		client := &StubClientA{}
-		config := &StubConfigA{
+		client := &StubReceiverClient{}
+		config := &StubConfig{
 			brokers: []string{"192.168.0.1"},
 			topic:   "test-topic",
 		}
@@ -53,8 +53,8 @@ func TestMessageReceiver(t *testing.T) {
 	})
 
 	t.Run("returns ErrReceive on error during message receival", func(t *testing.T) {
-		client := &StubClientA{}
-		config := &StubConfigA{
+		client := &StubReceiverClient{}
+		config := &StubConfig{
 			brokers: []string{"192.168.0.1"},
 		}
 

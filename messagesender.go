@@ -1,10 +1,10 @@
 package messaging
 
 type MessageSender struct {
-	client Client
+	client SenderClient
 }
 
-func NewMessageSender(client Client, configProvider SenderConfigProvider) (*MessageSender, error) {
+func NewMessageSender(client SenderClient, configProvider SenderConfigProvider) (*MessageSender, error) {
 	messageSender := MessageSender{
 		client: client,
 	}
