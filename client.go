@@ -1,16 +1,20 @@
 package messaging
 
-type Serializer interface {
-	Serialize(any) ([]byte, error)
-	Deserialize([]byte, any) error
-}
-
 type ConfigProvider interface {
 	GetBrokersAddrs() []string
 }
 
+type SenderConfigProvider interface {
+	GetBrokersAddrs() []string
+}
+
+type ReceiverConfigProvider interface {
+	GetBrokersAddrs() []string
+	GetTopic() string
+}
+
 type Client interface {
 	Connect(ConfigProvider) error
-	Send([]byte) error
-	Receive() ([]byte, error)
+	Send(Message) error
+	Receive() (Message, error)
 }

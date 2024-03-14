@@ -1,14 +1,12 @@
 package messaging
 
 type MessageReceiver struct {
-	serializer Serializer
-	client     Client
+	client Client
 }
 
-func NewMessageReceiver(client Client, configProvider ConfigProvider, serializer Serializer) (*MessageReceiver, error) {
+func NewMessageReceiver(client Client, configProvider ReceiverConfigProvider) (*MessageReceiver, error) {
 	receiver := MessageReceiver{
-		serializer: serializer,
-		client:     client,
+		client: client,
 	}
 
 	err := receiver.client.Connect(configProvider)
@@ -20,13 +18,7 @@ func NewMessageReceiver(client Client, configProvider ConfigProvider, serializer
 }
 
 func (m *MessageReceiver) ReceiveMessage() (Message, error) {
-	data, err := m.client.Receive()
-	if err != nil {
-		return nil, NewErrReceive(err)
-	}
-
-	var message BaseMessage
-	err = m.serializer.Deserialize(data, &message)
+	message, err := m.client.Receive()
 	if err != nil {
 		return nil, NewErrReceive(err)
 	}

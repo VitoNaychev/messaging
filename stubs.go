@@ -1,43 +1,26 @@
 package messaging
 
 import (
-	"encoding/json"
 	"errors"
-
-	"github.com/vmihailenco/msgpack/v5"
 )
 
 var (
 	ErrConfigMismatch = errors.New("Client doesn't support this ConfigProvider")
 )
 
-type JSONSerializer struct{}
-
-func (j *JSONSerializer) Serialize(v any) ([]byte, error) {
-	return json.Marshal(v)
-}
-
-func (j *JSONSerializer) Deserialize(data []byte, v any) error {
-	return json.Unmarshal(data, v)
-}
-
-type MsgpackSerializer struct{}
-
-func (j *MsgpackSerializer) Serialize(v any) ([]byte, error) {
-	return msgpack.Marshal(v)
-}
-
-func (j *MsgpackSerializer) Deserialize(data []byte, v any) error {
-	return msgpack.Unmarshal(data, v)
-}
-
 type StubConfigA struct {
-	brokers  []string
+	brokers []string
+	topic   string
+
 	connType string
 }
 
 func (s *StubConfigA) GetBrokersAddrs() []string {
 	return s.brokers
+}
+
+func (s *StubConfigA) GetTopic() string {
+	return s.topic
 }
 
 func (s *StubConfigA) GetConnectionType() string {
@@ -49,9 +32,10 @@ type StubClientA struct {
 	err         error
 
 	brokers  []string
+	topic    string
 	connType string
 
-	data []byte
+	message Message
 }
 
 func (s *StubClientA) Connect(config ConfigProvider) error {
@@ -63,27 +47,38 @@ func (s *StubClientA) Connect(config ConfigProvider) error {
 	}
 
 	s.brokers = configA.GetBrokersAddrs()
+
+	if config, ok := config.(ReceiverConfigProvider); ok {
+		s.topic = config.GetTopic()
+	}
+
 	s.connType = configA.GetConnectionType()
 
 	return nil
 }
 
-func (s *StubClientA) Send(data []byte) error {
-	s.data = data
+func (s *StubClientA) Send(message Message) error {
+	s.message = message
 	return s.err
 }
 
-func (s *StubClientA) Receive() ([]byte, error) {
-	return s.data, s.err
+func (s *StubClientA) Receive() (Message, error) {
+	return s.message, s.err
 }
 
 type StubConfigB struct {
-	brokers   []string
+	brokers []string
+	topic   string
+
 	partition int
 }
 
 func (s *StubConfigB) GetBrokersAddrs() []string {
 	return s.brokers
+}
+
+func (s *StubConfigB) GetTopic() string {
+	return s.topic
 }
 
 func (s *StubConfigB) GetPartition() int {
@@ -93,7 +88,8 @@ func (s *StubConfigB) GetPartition() int {
 type StubClientB struct {
 	brokers   []string
 	partition int
-	data      []byte
+
+	message Message
 }
 
 func (s *StubClientB) Connect(config ConfigProvider) error {
@@ -108,11 +104,11 @@ func (s *StubClientB) Connect(config ConfigProvider) error {
 	return nil
 }
 
-func (s *StubClientB) Send(data []byte) error {
-	s.data = data
+func (s *StubClientB) Send(message Message) error {
+	s.message = message
 	return nil
 }
 
-func (s *StubClientB) Receive() ([]byte, error) {
-	return s.data, nil
+func (s *StubClientB) Receive() (Message, error) {
+	return s.message, nil
 }

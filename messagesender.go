@@ -1,14 +1,12 @@
 package messaging
 
 type MessageSender struct {
-	client     Client
-	serializer Serializer
+	client Client
 }
 
-func NewMessageSender(client Client, configProvider ConfigProvider, serializer Serializer) (*MessageSender, error) {
+func NewMessageSender(client Client, configProvider SenderConfigProvider) (*MessageSender, error) {
 	messageSender := MessageSender{
-		client:     client,
-		serializer: serializer,
+		client: client,
 	}
 
 	err := messageSender.client.Connect(configProvider)
@@ -20,12 +18,7 @@ func NewMessageSender(client Client, configProvider ConfigProvider, serializer S
 }
 
 func (m *MessageSender) SendMessage(message Message) error {
-	data, err := m.serializer.Serialize(message)
-	if err != nil {
-		return NewErrSend(err)
-	}
-
-	err = m.client.Send(data)
+	err := m.client.Send(message)
 	if err != nil {
 		return NewErrSend(err)
 	}

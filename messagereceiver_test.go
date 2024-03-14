@@ -1,12 +1,9 @@
 package messaging
 
 import (
-	"encoding/json"
 	"errors"
 	"reflect"
 	"testing"
-
-	"github.com/vmihailenco/msgpack/v5"
 )
 
 func TestMessageReceiver(t *testing.T) {
@@ -14,9 +11,10 @@ func TestMessageReceiver(t *testing.T) {
 		client := &StubClientA{}
 		config := &StubConfigA{
 			brokers: []string{"192.168.0.1"},
+			topic:   "test-topic",
 		}
 
-		_, err := NewMessageReceiver(client, config, nil)
+		_, err := NewMessageReceiver(client, config)
 
 		AssertEqual(t, err, nil)
 		AssertEqual(t, client.isConnected, true)
@@ -26,45 +24,27 @@ func TestMessageReceiver(t *testing.T) {
 		client := &StubClientA{}
 		config := &StubConfigB{
 			brokers:   []string{"192.168.0.1"},
+			topic:     "test-topic",
 			partition: 2,
 		}
 
-		_, err := NewMessageReceiver(client, config, nil)
+		_, err := NewMessageReceiver(client, config)
 
 		AssertErrorType[*ErrConnect](t, err)
 	})
 
-	t.Run("receives JSON encoded message via client", func(t *testing.T) {
+	t.Run("receives message", func(t *testing.T) {
 		client := &StubClientA{}
 		config := &StubConfigA{
 			brokers: []string{"192.168.0.1"},
+			topic:   "test-topic",
 		}
-		serializer := &JSONSerializer{}
 
-		receiver, err := NewMessageReceiver(client, config, serializer)
+		receiver, err := NewMessageReceiver(client, config)
 		AssertEqual(t, err, nil)
 
 		want := NewBaseMessage(testMessageID, testTopic, testPayload)
-		client.data, _ = json.Marshal(want)
-
-		got, err := receiver.ReceiveMessage()
-		AssertEqual(t, err, nil)
-
-		AssertEqual(t, got, (Message)(want))
-	})
-
-	t.Run("receives MessagePack encoded message via client", func(t *testing.T) {
-		client := &StubClientA{}
-		config := &StubConfigA{
-			brokers: []string{"192.168.0.1"},
-		}
-		serializer := &MsgpackSerializer{}
-
-		receiver, err := NewMessageReceiver(client, config, serializer)
-		AssertEqual(t, err, nil)
-
-		want := NewBaseMessage(testMessageID, testTopic, testPayload)
-		client.data, _ = msgpack.Marshal(want)
+		client.message = want
 
 		got, err := receiver.ReceiveMessage()
 		AssertEqual(t, err, nil)
@@ -77,13 +57,12 @@ func TestMessageReceiver(t *testing.T) {
 		config := &StubConfigA{
 			brokers: []string{"192.168.0.1"},
 		}
-		serializer := &MsgpackSerializer{}
 
-		receiver, err := NewMessageReceiver(client, config, serializer)
+		receiver, err := NewMessageReceiver(client, config)
 		AssertEqual(t, err, nil)
 
 		message := NewBaseMessage(testMessageID, testTopic, testPayload)
-		client.data, _ = msgpack.Marshal(message)
+		client.message = message
 
 		client.err = errors.New("dummy error")
 		_, err = receiver.ReceiveMessage()
