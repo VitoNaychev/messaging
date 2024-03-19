@@ -69,9 +69,12 @@ func TestMessageReceiver(t *testing.T) {
 		want := NewBaseMessage(testMessageID, testTopic, testPayload)
 		client.message = want
 
-		ctx, _ := context.WithTimeout(context.Background(), time.Millisecond)
+		ctx, cancel := context.WithTimeout(context.Background(), time.Millisecond)
+		defer cancel()
+
 		_, err = receiver.ReceiveMessage(ctx)
 		AssertEqual(t, err, ctx.Err())
+
 	})
 
 	t.Run("returns ErrReceive on error during message receival", func(t *testing.T) {
