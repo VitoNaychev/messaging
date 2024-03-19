@@ -1,6 +1,11 @@
 package messaging
 
-import "fmt"
+import (
+	"errors"
+	"fmt"
+)
+
+var ErrDuplicateHandler = errors.New("handler already exists for this message ID")
 
 type ErrConnect struct {
 	msg string

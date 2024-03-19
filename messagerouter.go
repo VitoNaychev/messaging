@@ -21,8 +21,13 @@ func NewMessageRouter(client ReceiverClient, config ReceiverConfigProvider) (*Me
 	return router, err
 }
 
-func (m *MessageRouter) Subscribe(messageID int, handler MessageHandler) {
+func (m *MessageRouter) Subscribe(messageID int, handler MessageHandler) error {
+	if _, ok := m.subscribers[messageID]; ok {
+		return ErrDuplicateHandler
+	}
+
 	m.subscribers[messageID] = handler
+	return nil
 }
 
 func (m *MessageRouter) Listen() {

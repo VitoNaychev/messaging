@@ -55,6 +55,39 @@ func TestMessageRouter(t *testing.T) {
 		want := dummyMessageHandler
 		AssertEqualFunc(t, got, want)
 	})
+
+	t.Run("returns ErrDuplicateHandler if a handlers is already registered", func(t *testing.T) {
+		client := &StubReceiverClient{}
+		config := &StubConfig{
+			brokers: []string{"192.168.0.1"},
+			topic:   "test-topic",
+		}
+
+		router, err := NewMessageRouter(client, config)
+		AssertEqual(t, err, nil)
+
+		err = router.Subscribe(dummyMessageID, dummyMessageHandler)
+		AssertEqual(t, err, nil)
+
+		err = router.Subscribe(dummyMessageID, dummyMessageHandler)
+		AssertEqual(t, err, ErrDuplicateHandler)
+	})
+
+	t.Run("routes message to message handler", func(t *testing.T) {
+		client := &StubReceiverClient{}
+		config := &StubConfig{
+			brokers: []string{"192.168.0.1"},
+			topic:   "test-topic",
+		}
+
+		router, err := NewMessageRouter(client, config)
+		AssertEqual(t, err, nil)
+
+		router.Subscribe(dummyMessageID, dummyMessageHandler)
+
+		want := NewBaseMessage(dummyMessageID, "test-topic", "Hello, World!")
+		client.message = want
+	})
 }
 
 func AssertEqualFunc[T any](t testing.TB, got T, want T) {
