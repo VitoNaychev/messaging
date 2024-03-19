@@ -1,5 +1,7 @@
 package messaging
 
+import "context"
+
 type ReceiverConfigProvider interface {
 	GetBrokersAddrs() []string
 	GetTopic() string
@@ -7,5 +9,5 @@ type ReceiverConfigProvider interface {
 
 type ReceiverClient interface {
 	Connect(ReceiverConfigProvider) error
-	Receive() (Message, error)
+	Receive(context.Context) (Message, error)
 }

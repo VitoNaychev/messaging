@@ -1,9 +1,11 @@
 package messaging
 
 import (
+	"context"
 	"errors"
 	"reflect"
 	"testing"
+	"time"
 )
 
 func TestMessageReceiver(t *testing.T) {
@@ -46,10 +48,30 @@ func TestMessageReceiver(t *testing.T) {
 		want := NewBaseMessage(testMessageID, testTopic, testPayload)
 		client.message = want
 
-		got, err := receiver.ReceiveMessage()
+		got, err := receiver.ReceiveMessage(context.Background())
 		AssertEqual(t, err, nil)
 
 		AssertEqual(t, got, (Message)(want))
+	})
+
+	t.Run("cancels receive message via context", func(t *testing.T) {
+		client := &StubReceiverClient{
+			timeout: time.Millisecond * 2,
+		}
+		config := &StubConfig{
+			brokers: []string{"192.168.0.1"},
+			topic:   "test-topic",
+		}
+
+		receiver, err := NewMessageReceiver(client, config)
+		AssertEqual(t, err, nil)
+
+		want := NewBaseMessage(testMessageID, testTopic, testPayload)
+		client.message = want
+
+		ctx, _ := context.WithTimeout(context.Background(), time.Millisecond)
+		_, err = receiver.ReceiveMessage(ctx)
+		AssertEqual(t, err, ctx.Err())
 	})
 
 	t.Run("returns ErrReceive on error during message receival", func(t *testing.T) {
@@ -65,7 +87,7 @@ func TestMessageReceiver(t *testing.T) {
 		client.message = message
 
 		client.err = errors.New("dummy error")
-		_, err = receiver.ReceiveMessage()
+		_, err = receiver.ReceiveMessage(context.Background())
 		AssertErrorType[*ErrReceive](t, err)
 
 	})

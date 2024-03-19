@@ -1,11 +1,13 @@
 package messaging
 
 import (
+	"context"
 	"errors"
+	"time"
 )
 
 var (
-	ErrConfigMismatch = errors.New("Client doesn't support this ConfigProvider")
+	ErrConfigMismatch = errors.New("client doesn't support this ConfigProvider")
 )
 
 type StubConfig struct {
@@ -62,6 +64,7 @@ func (s *StubSenderClient) Receive() (Message, error) {
 
 type StubReceiverClient struct {
 	isConnected bool
+	timeout     time.Duration
 	err         error
 
 	brokers  []string
@@ -92,6 +95,20 @@ func (s *StubReceiverClient) Send(message Message) error {
 	return s.err
 }
 
-func (s *StubReceiverClient) Receive() (Message, error) {
-	return s.message, s.err
+func (s *StubReceiverClient) Receive(ctx context.Context) (Message, error) {
+	sleepChan := make(chan interface{})
+
+	go func() {
+		if s.timeout != 0 {
+			time.Sleep(s.timeout)
+		}
+		sleepChan <- nil
+	}()
+
+	select {
+	case <-ctx.Done():
+		return nil, ctx.Err()
+	case <-sleepChan:
+		return s.message, s.err
+	}
 }

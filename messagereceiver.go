@@ -1,5 +1,7 @@
 package messaging
 
+import "context"
+
 type MessageReceiver struct {
 	client ReceiverClient
 }
@@ -17,8 +19,11 @@ func NewMessageReceiver(client ReceiverClient, configProvider ReceiverConfigProv
 	return &messageReceiver, nil
 }
 
-func (m *MessageReceiver) ReceiveMessage() (Message, error) {
-	message, err := m.client.Receive()
+func (m *MessageReceiver) ReceiveMessage(ctx context.Context) (Message, error) {
+	message, err := m.client.Receive(ctx)
+	if ctx.Err() != nil {
+		return nil, err
+	}
 	if err != nil {
 		return nil, NewErrReceive(err)
 	}
