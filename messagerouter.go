@@ -12,7 +12,7 @@ type RouterConfigProvider struct {
 type MessageHandler func(Message) error
 
 type MessageRouter struct {
-	client ReceiverClient
+	receiver *MessageReceiver
 
 	subscribers map[int]MessageHandler
 	errors      bool
@@ -20,17 +20,17 @@ type MessageRouter struct {
 }
 
 func NewMessageRouter(client ReceiverClient, config *RouterConfigProvider) (*MessageRouter, error) {
+	recevier, err := NewMessageReceiver(client, config.ReceiverConfigProvider)
+	if err != nil {
+		return nil, err
+	}
+
 	router := &MessageRouter{
-		client: client,
+		receiver: recevier,
 
 		subscribers: map[int]MessageHandler{},
 		errors:      config.Errors,
 		errChan:     make(chan error, 1),
-	}
-
-	err := router.client.Connect(config.ReceiverConfigProvider)
-	if err != nil {
-		return nil, NewErrConnect(err)
 	}
 
 	return router, err
@@ -47,12 +47,9 @@ func (m *MessageRouter) Subscribe(messageID int, handler MessageHandler) error {
 
 func (m *MessageRouter) Listen(ctx context.Context) error {
 	for {
-		message, err := m.client.Receive(ctx)
-		if ctx.Err() != nil {
-			return err
-		}
+		message, err := m.receiver.ReceiveMessage(ctx)
 		if err != nil {
-			return NewErrReceive(err)
+			return err
 		}
 
 		handler, ok := m.subscribers[message.GetMessageID()]
@@ -71,7 +68,7 @@ func (m *MessageRouter) Listen(ctx context.Context) error {
 }
 
 func (m *MessageRouter) Close() error {
-	return m.client.Close()
+	return m.receiver.Close()
 }
 
 func (m *MessageRouter) Errors() chan error {
