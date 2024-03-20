@@ -31,6 +31,7 @@ func (s *StubConfig) GetConnectionType() string {
 
 type StubSenderClient struct {
 	isConnected bool
+	isClosed    bool
 	err         error
 
 	brokers  []string
@@ -58,12 +59,14 @@ func (s *StubSenderClient) Send(message Message) error {
 	return s.err
 }
 
-func (s *StubSenderClient) Receive() (Message, error) {
-	return s.message, s.err
+func (s *StubSenderClient) Close() error {
+	s.isClosed = true
+	return nil
 }
 
 type StubReceiverClient struct {
 	isConnected bool
+	isClosed    bool
 	timeout     time.Duration
 	err         error
 
@@ -90,11 +93,6 @@ func (s *StubReceiverClient) Connect(config ReceiverConfigProvider) error {
 	return s.err
 }
 
-func (s *StubReceiverClient) Send(message Message) error {
-	s.message = message
-	return s.err
-}
-
 func (s *StubReceiverClient) Receive(ctx context.Context) (Message, error) {
 	sleepChan := make(chan interface{})
 
@@ -111,4 +109,9 @@ func (s *StubReceiverClient) Receive(ctx context.Context) (Message, error) {
 	case <-sleepChan:
 		return s.message, s.err
 	}
+}
+
+func (s *StubReceiverClient) Close() error {
+	s.isClosed = true
+	return nil
 }

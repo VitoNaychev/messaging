@@ -7,4 +7,5 @@ type SenderConfigProvider interface {
 type SenderClient interface {
 	Connect(SenderConfigProvider) error
 	Send(Message) error
+	Close() error
 }

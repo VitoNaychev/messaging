@@ -25,3 +25,7 @@ func (m *MessageSender) SendMessage(message Message) error {
 
 	return nil
 }
+
+func (m *MessageSender) Close() error {
+	return m.client.Close()
+}

@@ -65,4 +65,17 @@ func TestMessageSender(t *testing.T) {
 
 		AssertErrorType[*ErrSend](t, err)
 	})
+
+	t.Run("calls client.Close in Close method", func(t *testing.T) {
+		client := &StubSenderClient{}
+		config := &StubConfig{
+			brokers: []string{"192.168.0.1"},
+		}
+
+		sender, err := NewMessageSender(client, config)
+		AssertEqual(t, err, nil)
+
+		sender.Close()
+		AssertEqual(t, client.isClosed, true)
+	})
 }

@@ -30,3 +30,7 @@ func (m *MessageReceiver) ReceiveMessage(ctx context.Context) (Message, error) {
 
 	return message, nil
 }
+
+func (m *MessageReceiver) Close() error {
+	return m.client.Close()
+}

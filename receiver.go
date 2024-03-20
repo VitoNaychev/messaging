@@ -10,4 +10,5 @@ type ReceiverConfigProvider interface {
 type ReceiverClient interface {
 	Connect(ReceiverConfigProvider) error
 	Receive(context.Context) (Message, error)
+	Close() error
 }

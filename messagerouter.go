@@ -67,6 +67,10 @@ func (m *MessageRouter) Listen(ctx context.Context) error {
 	}
 }
 
+func (m *MessageRouter) Close() error {
+	return m.client.Close()
+}
+
 func (m *MessageRouter) Errors() chan error {
 	return m.errChan
 }

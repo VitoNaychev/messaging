@@ -268,6 +268,23 @@ func TestMessageRouter(t *testing.T) {
 
 		AssertEqual(t, err, nil)
 	})
+
+	t.Run("calls client.Close in Close method", func(t *testing.T) {
+		client := &StubReceiverClient{}
+		config := &RouterConfigProvider{
+			Errors: false,
+			ReceiverConfigProvider: &StubConfig{
+				brokers: []string{"192.168.0.1"},
+				topic:   "test-topic",
+			},
+		}
+
+		router, err := NewMessageRouter(client, config)
+		AssertEqual(t, err, nil)
+
+		router.Close()
+		AssertEqual(t, client.isClosed, true)
+	})
 }
 
 func listenForErrors(ctx context.Context, router *MessageRouter, err *error) {
