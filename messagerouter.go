@@ -52,7 +52,15 @@ func (m *MessageRouter) Listen(ctx context.Context) error {
 			return err
 		}
 
-		err = m.subscribers[message.GetMessageID()](message)
+		handler, ok := m.subscribers[message.GetMessageID()]
+		if !ok {
+			if m.errors {
+				m.errChan <- ErrUnknownMessage
+			}
+			continue
+		}
+
+		err = handler(message)
 		if m.errors && err != nil {
 			m.errChan <- err
 		}

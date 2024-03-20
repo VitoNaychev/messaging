@@ -5,7 +5,8 @@ import (
 	"fmt"
 )
 
-var ErrDuplicateHandler = errors.New("handler already exists for this message ID")
+var ErrDuplicateHandler = errors.New("handler already exists for message ID")
+var ErrUnknownMessage = errors.New("message ID isn't associated with any handler")
 
 type ErrConnect struct {
 	msg string
