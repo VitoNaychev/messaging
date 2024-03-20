@@ -25,9 +25,12 @@ func (s *StubMessageHandler) Handle(message Message) error {
 func TestMessageRouter(t *testing.T) {
 	t.Run("connects to client", func(t *testing.T) {
 		client := &StubReceiverClient{}
-		config := &StubConfig{
-			brokers: []string{"192.168.0.1"},
-			topic:   "test-topic",
+		config := &RouterConfigProvider{
+			Errors: false,
+			ReceiverConfigProvider: &StubConfig{
+				brokers: []string{"192.168.0.1"},
+				topic:   "test-topic",
+			},
 		}
 
 		_, err := NewMessageRouter(client, config)
@@ -38,9 +41,12 @@ func TestMessageRouter(t *testing.T) {
 
 	t.Run("returns ErrConnect on connection error", func(t *testing.T) {
 		client := &StubReceiverClient{}
-		config := &StubConfig{
-			brokers: []string{"192.168.0.1"},
-			topic:   "test-topic",
+		config := &RouterConfigProvider{
+			Errors: false,
+			ReceiverConfigProvider: &StubConfig{
+				brokers: []string{"192.168.0.1"},
+				topic:   "test-topic",
+			},
 		}
 
 		client.err = errors.New("dummy error")
@@ -51,9 +57,12 @@ func TestMessageRouter(t *testing.T) {
 
 	t.Run("adds message handler to list of subscribers", func(t *testing.T) {
 		client := &StubReceiverClient{}
-		config := &StubConfig{
-			brokers: []string{"192.168.0.1"},
-			topic:   "test-topic",
+		config := &RouterConfigProvider{
+			Errors: false,
+			ReceiverConfigProvider: &StubConfig{
+				brokers: []string{"192.168.0.1"},
+				topic:   "test-topic",
+			},
 		}
 
 		router, err := NewMessageRouter(client, config)
@@ -70,9 +79,12 @@ func TestMessageRouter(t *testing.T) {
 
 	t.Run("returns ErrDuplicateHandler if a handlers is already registered", func(t *testing.T) {
 		client := &StubReceiverClient{}
-		config := &StubConfig{
-			brokers: []string{"192.168.0.1"},
-			topic:   "test-topic",
+		config := &RouterConfigProvider{
+			Errors: false,
+			ReceiverConfigProvider: &StubConfig{
+				brokers: []string{"192.168.0.1"},
+				topic:   "test-topic",
+			},
 		}
 
 		router, err := NewMessageRouter(client, config)
@@ -90,9 +102,12 @@ func TestMessageRouter(t *testing.T) {
 		client := &StubReceiverClient{
 			timeout: time.Millisecond,
 		}
-		config := &StubConfig{
-			brokers: []string{"192.168.0.1"},
-			topic:   "test-topic",
+		config := &RouterConfigProvider{
+			Errors: false,
+			ReceiverConfigProvider: &StubConfig{
+				brokers: []string{"192.168.0.1"},
+				topic:   "test-topic",
+			},
 		}
 
 		router, err := NewMessageRouter(client, config)
@@ -114,9 +129,12 @@ func TestMessageRouter(t *testing.T) {
 
 	t.Run("routes message to message handler", func(t *testing.T) {
 		client := &StubReceiverClient{}
-		config := &StubConfig{
-			brokers: []string{"192.168.0.1"},
-			topic:   "test-topic",
+		config := &RouterConfigProvider{
+			Errors: false,
+			ReceiverConfigProvider: &StubConfig{
+				brokers: []string{"192.168.0.1"},
+				topic:   "test-topic",
+			},
 		}
 
 		router, err := NewMessageRouter(client, config)
@@ -137,11 +155,14 @@ func TestMessageRouter(t *testing.T) {
 		AssertEqual(t, got, (Message)(want))
 	})
 
-	t.Run("forwards handler errors via Errors() chan", func(t *testing.T) {
+	t.Run("forwards handler errors when config.Errors is set", func(t *testing.T) {
 		client := &StubReceiverClient{}
-		config := &StubConfig{
-			brokers: []string{"192.168.0.1"},
-			topic:   "test-topic",
+		config := &RouterConfigProvider{
+			Errors: true,
+			ReceiverConfigProvider: &StubConfig{
+				brokers: []string{"192.168.0.1"},
+				topic:   "test-topic",
+			},
 		}
 
 		router, err := NewMessageRouter(client, config)
@@ -156,11 +177,49 @@ func TestMessageRouter(t *testing.T) {
 		ctx, cancel := context.WithTimeout(context.Background(), time.Millisecond)
 		defer cancel()
 
+		go listenForErrors(ctx, router, &err)
 		router.Listen(ctx)
 
-		err = <-router.Errors()
 		AssertEqual(t, err, messageHandler.err)
 	})
+
+	t.Run("doesn't forward handler errors when config.Errors is not set", func(t *testing.T) {
+		client := &StubReceiverClient{}
+		config := &RouterConfigProvider{
+			Errors: false,
+			ReceiverConfigProvider: &StubConfig{
+				brokers: []string{"192.168.0.1"},
+				topic:   "test-topic",
+			},
+		}
+
+		router, err := NewMessageRouter(client, config)
+		AssertEqual(t, err, nil)
+
+		messageHandler := &StubMessageHandler{err: dummyError}
+		router.Subscribe(dummyMessageID, messageHandler.Handle)
+
+		want := NewBaseMessage(dummyMessageID, "test-topic", "Hello, World!")
+		client.message = want
+
+		ctx, cancel := context.WithTimeout(context.Background(), time.Millisecond)
+		defer cancel()
+
+		go listenForErrors(ctx, router, &err)
+		router.Listen(ctx)
+
+		AssertEqual(t, err, nil)
+	})
+}
+
+func listenForErrors(ctx context.Context, router *MessageRouter, err *error) {
+	for {
+		select {
+		case *err = <-router.Errors():
+		case <-ctx.Done():
+			return
+		}
+	}
 }
 
 func AssertEqualFunc[T any](t testing.TB, got T, want T) {

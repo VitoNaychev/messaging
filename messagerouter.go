@@ -4,22 +4,31 @@ import (
 	"context"
 )
 
+type RouterConfigProvider struct {
+	Errors bool
+	ReceiverConfigProvider
+}
+
 type MessageHandler func(Message) error
 
 type MessageRouter struct {
-	client      ReceiverClient
+	client ReceiverClient
+
 	subscribers map[int]MessageHandler
+	errors      bool
 	errChan     chan error
 }
 
-func NewMessageRouter(client ReceiverClient, config ReceiverConfigProvider) (*MessageRouter, error) {
+func NewMessageRouter(client ReceiverClient, config *RouterConfigProvider) (*MessageRouter, error) {
 	router := &MessageRouter{
-		client:      client,
+		client: client,
+
 		subscribers: map[int]MessageHandler{},
+		errors:      config.Errors,
 		errChan:     make(chan error, 1),
 	}
 
-	err := router.client.Connect(config)
+	err := router.client.Connect(config.ReceiverConfigProvider)
 	if err != nil {
 		return nil, NewErrConnect(err)
 	}
@@ -44,7 +53,7 @@ func (m *MessageRouter) Listen(ctx context.Context) error {
 		}
 
 		err = m.subscribers[message.GetMessageID()](message)
-		if err != nil {
+		if m.errors && err != nil {
 			m.errChan <- err
 		}
 	}
