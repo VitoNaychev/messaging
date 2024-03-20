@@ -51,6 +51,9 @@ func (m *MessageRouter) Listen(ctx context.Context) error {
 		if ctx.Err() != nil {
 			return err
 		}
+		if err != nil {
+			return NewErrReceive(err)
+		}
 
 		handler, ok := m.subscribers[message.GetMessageID()]
 		if !ok {

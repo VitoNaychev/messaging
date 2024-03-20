@@ -127,6 +127,33 @@ func TestMessageRouter(t *testing.T) {
 		AssertEqual(t, err, ctx.Err())
 	})
 
+	t.Run("returns ErrReceive on error during message receival", func(t *testing.T) {
+		client := &StubReceiverClient{
+			timeout: time.Millisecond,
+		}
+		config := &RouterConfigProvider{
+			Errors: false,
+			ReceiverConfigProvider: &StubConfig{
+				brokers: []string{"192.168.0.1"},
+				topic:   "test-topic",
+			},
+		}
+
+		router, err := NewMessageRouter(client, config)
+		AssertEqual(t, err, nil)
+
+		messageHandler := &StubMessageHandler{}
+		err = router.Subscribe(dummyMessageID, messageHandler.Handle)
+		AssertEqual(t, err, nil)
+
+		want := NewBaseMessage(dummyMessageID, "test-topic", "Hello, World!")
+		client.message = want
+
+		client.err = errors.New("dummy error")
+		err = router.Listen(context.Background())
+		AssertErrorType[*ErrReceive](t, err)
+	})
+
 	t.Run("routes message to message handler", func(t *testing.T) {
 		client := &StubReceiverClient{}
 		config := &RouterConfigProvider{
