@@ -8,11 +8,11 @@ import (
 	"github.com/segmentio/kafka-go"
 )
 
-type Sender struct {
+type SenderClient struct {
 	writer *kafka.Writer
 }
 
-func (s *Sender) Connect(config messaging.SenderConfigProvider) error {
+func (s *SenderClient) Connect(config messaging.SenderConfigProvider) error {
 	s.writer = &kafka.Writer{
 		Addr:                   kafka.TCP(config.GetBrokersAddrs()...),
 		AllowAutoTopicCreation: true,
@@ -22,7 +22,7 @@ func (s *Sender) Connect(config messaging.SenderConfigProvider) error {
 	return nil
 }
 
-func (s *Sender) Send(message messaging.Message) error {
+func (s *SenderClient) Send(message messaging.Message) error {
 	msgJSON, _ := json.Marshal(message)
 
 	kafkaMessage := kafka.Message{
@@ -32,6 +32,6 @@ func (s *Sender) Send(message messaging.Message) error {
 	return s.writer.WriteMessages(context.Background(), kafkaMessage)
 }
 
-func (s *Sender) Close() error {
+func (s *SenderClient) Close() error {
 	return s.writer.Close()
 }

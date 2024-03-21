@@ -18,11 +18,11 @@ func (k *KafkaReceiverConfigProvider) GetConsumerGroup() string {
 	return k.ConsumerGroup
 }
 
-type Receiver struct {
+type ReceiverClient struct {
 	reader *kafka.Reader
 }
 
-func (r *Receiver) Connect(config messaging.ReceiverConfigProvider) error {
+func (r *ReceiverClient) Connect(config messaging.ReceiverConfigProvider) error {
 	kafkaConfig, ok := config.(*KafkaReceiverConfigProvider)
 	if !ok {
 		return errors.New("client doesn't support this ConfigProvider")
@@ -38,7 +38,7 @@ func (r *Receiver) Connect(config messaging.ReceiverConfigProvider) error {
 	return nil
 }
 
-func (r *Receiver) Receive(ctx context.Context) (messaging.Message, error) {
+func (r *ReceiverClient) Receive(ctx context.Context) (messaging.Message, error) {
 	kafkaMessage, err := r.reader.ReadMessage(ctx)
 	if err != nil {
 		return nil, err
@@ -49,6 +49,6 @@ func (r *Receiver) Receive(ctx context.Context) (messaging.Message, error) {
 	return message, nil
 }
 
-func (s *Receiver) Close() error {
+func (s *ReceiverClient) Close() error {
 	return s.reader.Close()
 }

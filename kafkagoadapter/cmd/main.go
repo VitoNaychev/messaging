@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"log"
 	"messaging"
-	kafkagoadapter "messaging/kafka-go-adapter"
+	"messaging/kafkagoadapter"
 	"time"
 )
 
@@ -27,7 +27,7 @@ func main() {
 	senderConfig := &messaging.BaseSenderConfigProvider{
 		Brokers: []string{"localhost:9092"},
 	}
-	sender, err := messaging.NewMessageSender(&kafkagoadapter.Sender{}, senderConfig)
+	sender, err := messaging.NewMessageSender(&kafkagoadapter.SenderClient{}, senderConfig)
 	if err != nil {
 		log.Fatal("NewMessageSender error: ", err)
 	}
@@ -45,7 +45,7 @@ func main() {
 			},
 		},
 	}
-	router, err := messaging.NewMessageRouter(&kafkagoadapter.Receiver{}, routerConfig)
+	router, err := messaging.NewMessageRouter(&kafkagoadapter.ReceiverClient{}, routerConfig)
 	if err != nil {
 		log.Fatal("NewMessageReceiver error: ", err)
 	}
