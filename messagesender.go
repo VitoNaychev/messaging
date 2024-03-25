@@ -1,23 +1,31 @@
 package messaging
 
-type MarshalFunc func(any) ([]byte, error)
-
 type MessageSender struct {
-	client      Client
-	marshalFunc MarshalFunc
+	client SenderClient
 }
 
-func NewMessageSender(client Client, configProvider ConfigProvider, marshalFunc MarshalFunc) *MessageSender {
+func NewMessageSender(client SenderClient, configProvider SenderConfigProvider) (*MessageSender, error) {
 	messageSender := MessageSender{
-		client:      client,
-		marshalFunc: marshalFunc,
+		client: client,
 	}
 
-	messageSender.client.Connect(configProvider)
-	return &messageSender
+	err := messageSender.client.Connect(configProvider)
+	if err != nil {
+		return &messageSender, NewErrConnect(err)
+	}
+
+	return &messageSender, nil
 }
 
 func (m *MessageSender) SendMessage(message Message) error {
-	data, _ := m.marshalFunc(message)
-	return m.client.Send(data)
+	err := m.client.Send(message)
+	if err != nil {
+		return NewErrSend(err)
+	}
+
+	return nil
+}
+
+func (m *MessageSender) Close() error {
+	return m.client.Close()
 }

@@ -1,104 +1,112 @@
 package messaging
 
 import (
-	"encoding/json"
+	"context"
 	"errors"
 	"reflect"
 	"testing"
-
-	"github.com/vmihailenco/msgpack/v5"
+	"time"
 )
 
 func TestMessageReceiver(t *testing.T) {
 	t.Run("connects to client", func(t *testing.T) {
-		client := &StubClientA{}
-		config := &StubConfigA{
+		client := &StubReceiverClient{}
+		config := &StubConfig{
 			brokers: []string{"192.168.0.1"},
+			topic:   "test-topic",
 		}
 
-		_, err := NewMessageReceiver(client, config, nil)
+		_, err := NewMessageReceiver(client, config)
 
 		AssertEqual(t, err, nil)
 		AssertEqual(t, client.isConnected, true)
 	})
 
 	t.Run("returns ErrConnect on connection error", func(t *testing.T) {
-		client := &StubClientA{}
-		config := &StubConfigB{
-			brokers:   []string{"192.168.0.1"},
-			partition: 2,
+		client := &StubReceiverClient{}
+		config := &StubConfig{
+			brokers: []string{"192.168.0.1"},
+			topic:   "test-topic",
 		}
 
-		_, err := NewMessageReceiver(client, config, nil)
+		client.err = errors.New("dummy error")
+		_, err := NewMessageReceiver(client, config)
 
 		AssertErrorType[*ErrConnect](t, err)
 	})
 
-	t.Run("receives JSON encoded message via client", func(t *testing.T) {
-		client := &StubClientA{}
-		config := &StubConfigA{
+	t.Run("receives message", func(t *testing.T) {
+		client := &StubReceiverClient{}
+		config := &StubConfig{
 			brokers: []string{"192.168.0.1"},
+			topic:   "test-topic",
 		}
 
-		receiver, err := NewMessageReceiver(client, config, json.Unmarshal)
+		receiver, err := NewMessageReceiver(client, config)
 		AssertEqual(t, err, nil)
 
 		want := NewBaseMessage(testMessageID, testTopic, testPayload)
-		client.data, _ = json.Marshal(want)
+		client.message = want
 
-		got := receiver.ReceiveMessage()
+		got, err := receiver.ReceiveMessage(context.Background())
+		AssertEqual(t, err, nil)
 
 		AssertEqual(t, got, (Message)(want))
 	})
 
-	t.Run("receives MessagePack encoded message via client", func(t *testing.T) {
-		client := &StubClientA{}
-		config := &StubConfigA{
+	t.Run("cancels receive message via context", func(t *testing.T) {
+		client := &StubReceiverClient{
+			timeout: time.Millisecond * 2,
+		}
+		config := &StubConfig{
 			brokers: []string{"192.168.0.1"},
+			topic:   "test-topic",
 		}
 
-		receiver, err := NewMessageReceiver(client, config, msgpack.Unmarshal)
+		receiver, err := NewMessageReceiver(client, config)
 		AssertEqual(t, err, nil)
 
 		want := NewBaseMessage(testMessageID, testTopic, testPayload)
-		client.data, _ = msgpack.Marshal(want)
+		client.message = want
 
-		got := receiver.ReceiveMessage()
+		ctx, cancel := context.WithTimeout(context.Background(), time.Millisecond)
+		defer cancel()
 
-		AssertEqual(t, got, (Message)(want))
+		_, err = receiver.ReceiveMessage(ctx)
+		AssertEqual(t, err, ctx.Err())
+
 	})
 
-	// t.Run("receives message from channel", func(t *testing.T) {
-	// 	want := NewBaseMessage(testMessageID, testTopic, testPayload)
+	t.Run("returns ErrReceive on error during message receival", func(t *testing.T) {
+		client := &StubReceiverClient{}
+		config := &StubConfig{
+			brokers: []string{"192.168.0.1"},
+		}
 
-	// 	got := receiver.ReceiveMessage()
+		receiver, err := NewMessageReceiver(client, config)
+		AssertEqual(t, err, nil)
 
-	// 	if !reflect.DeepEqual(want, got) {
-	// 		t.Errorf("got %v want %v", got, want)
-	// 	}
-	// })
+		message := NewBaseMessage(testMessageID, testTopic, testPayload)
+		client.message = message
 
-	// t.Run("receives multiple messages from channel", func(t *testing.T) {
-	// 	wantFirst := NewBaseMessage(testMessageID, testTopic, "First")
-	// 	wantSecond := NewBaseMessage(testMessageID, testTopic, "Second")
-	// 	wantThird := NewBaseMessage(testMessageID, testTopic, "Third")
+		client.err = errors.New("dummy error")
+		_, err = receiver.ReceiveMessage(context.Background())
+		AssertErrorType[*ErrReceive](t, err)
 
-	// 	go func() {
-	// 		msgChan <- wantFirst
-	// 		msgChan <- wantSecond
-	// 		msgChan <- wantThird
-	// 	}()
+	})
 
-	// 	got := receiver.ReceiveMessage()
-	// 	AssertEqual(t, got, (Message)(wantFirst))
+	t.Run("calls client.Close in Close method", func(t *testing.T) {
+		client := &StubReceiverClient{}
+		config := &StubConfig{
+			brokers: []string{"192.168.0.1"},
+		}
 
-	// 	got = receiver.ReceiveMessage()
-	// 	AssertEqual(t, got, (Message)(wantSecond))
+		receiver, err := NewMessageReceiver(client, config)
+		AssertEqual(t, err, nil)
 
-	// 	got = receiver.ReceiveMessage()
-	// 	AssertEqual(t, got, (Message)(wantThird))
-	// })
-
+		receiver.Close()
+		AssertEqual(t, client.isClosed, true)
+	})
 }
 
 func AssertErrorType[T error](t testing.TB, got error) {
